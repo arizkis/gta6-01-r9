@@ -1,0 +1,6 @@
+{
+  "name": "high-water-sunspur",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node serve.ts" }
+}

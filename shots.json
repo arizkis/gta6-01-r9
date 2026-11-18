@@ -1,5 +1,6 @@
 [
-  { "name": "1-start.jpg", "query": "?shot=start&seed=1" },
-  { "name": "2-play.jpg", "query": "?shot=play&seed=1" },
-  { "name": "3-end.jpg", "query": "?shot=end&seed=1" }
+  { "name": "01-cover-surge.jpg", "query": "?shot=cover&seed=17" },
+  { "name": "02-market-rainbreak.jpg", "query": "?shot=market&seed=17" },
+  { "name": "03-garage-night.jpg", "query": "?shot=garage&seed=17" },
+  { "name": "04-causeway-dawn.jpg", "query": "?shot=causeway&seed=17" }
 ]

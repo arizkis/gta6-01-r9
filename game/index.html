@@ -1,19 +1,69 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Dodger</title>
-<style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
-  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101727">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="icon" href="data:,">
+  <title>High Water — a Sunspur surge run</title>
 </head>
 <body>
-<canvas id="game" aria-label="Block Dodger: move the paddle left and right to dodge falling blocks and catch coins"></canvas>
-<p id="status" role="status" aria-live="polite"></p>
-<script type="module" src="./src/main.js"></script>
+  <canvas id="game" aria-label="Live view of Sunspur Bay"></canvas>
+  <main id="hud" hidden aria-label="Driving and mission display">
+    <div class="stack top-left">
+      <section class="panel mark"><span class="label">SUNSPUR BAY / STORMWATCH</span><strong>HIGH WATER</strong><span id="district"></span></section>
+      <section class="panel mission"><span class="label">CURRENT JOB <b id="stage"></b></span><h2 id="job">NO ACTIVE JOB</h2><span id="objective">Open the job board from the pause menu.</span></section>
+    </div>
+    <div class="stack top-right">
+      <section class="panel alert-panel">
+        <div class="row"><span class="label">WANTED</span><div id="stars" aria-label="Wanted level"></div></div>
+        <div class="row evidence"><span class="label">EVIDENCE</span><div id="evidence"></div></div>
+        <p id="dispatch" hidden></p>
+      </section>
+      <section class="panel money"><span>CASH <b id="cash"></b></span><span>BANKED <b id="banked"></b></span><time id="clock"></time></section>
+      <section class="panel surge"><span>SURGE <strong id="surge"></strong></span><span id="bridge">CAUSEWAY CLOSES</span></section>
+      <section class="panel" id="response" hidden><span class="label">POLICE RESPONSE</span><ul id="units"></ul></section>
+    </div>
+    <div class="stack bottom-left">
+      <section class="panel vitals" aria-label="Condition and respect">
+        <div id="vitals"></div><div id="respect"></div>
+      </section>
+      <div class="map"><canvas id="map" width="336" height="336" aria-label="Local street map"></canvas><span id="map-district"></span></div>
+    </div>
+    <div class="stack bottom-right">
+      <section class="panel cooler" id="cooler" hidden><div><span class="label">COOLER</span><b id="temperature"></b></div><div><span class="label">INTEGRITY</span><b id="integrity"></b></div><div><span class="label">PAYOUT</span><b id="payout"></b></div></section>
+      <div class="readouts">
+        <section class="panel water" id="water"><div class="water-tube" aria-hidden="true"><i></i></div><div><span class="label">WATER</span><strong id="depth"></strong></div></section>
+        <section class="panel vehicle" id="vehicle" hidden><span class="label" id="car-name"></span><div><b id="speed"></b> <small>KM/H</small></div><span id="condition"></span><span id="radio" hidden></span></section>
+      </div>
+    </div>
+    <div class="stack bottom-center">
+      <div class="panel prompt" id="prompt" hidden><kbd>E</kbd> <span></span></div>
+      <div class="panel dialogue" id="dialogue" hidden><div id="portrait"></div><div><strong id="speaker"></strong><p id="line"></p></div></div>
+      <div class="panel phone" id="phone" hidden></div>
+    </div>
+    <footer class="keys"><span><kbd>WASD</kbd> Move / drive</span><span><kbd>SHIFT</kbd> Sprint</span><span><kbd>E</kbd> Interact</span><span><kbd>F</kbd> Radio</span><span><kbd>X</kbd> Spike strip</span><span><kbd>ESC</kbd> Pause</span></footer>
+  </main>
+  <div id="menus" class="menus">
+    <section class="menu title" id="title">
+      <div class="eyebrow"><span class="beacon"></span> SUNSPUR BAY · COASTAL SURGE ADVISORY</div>
+      <h1>HIGH<br><em>WATER</em></h1>
+      <p class="subtitle">a Sunspur surge run</p>
+      <p class="intro">A freezer van. A city filling with rain. Get the cargo out before the last road goes under.</p>
+      <div class="actions"><button class="primary" id="start">START RUN <kbd>ENTER</kbd></button><button id="title-board">JOB BOARD</button></div>
+      <p class="menu-keys">WASD / ARROWS — MOVE &amp; DRIVE &nbsp; · &nbsp; E — INTERACT</p>
+    </section>
+    <section class="menu utility" id="pause" hidden>
+      <div class="eyebrow">SUNSPUR BAY / RUN CONTROL</div><h2>RUN PAUSED</h2>
+      <div class="actions"><button class="primary" id="resume">RESUME</button><button id="pause-board">JOB BOARD</button><button id="restart">RESTART DAY</button></div>
+    </section>
+    <section class="menu utility board" id="board" hidden>
+      <div class="eyebrow">SUNSPUR BAY / CONTACT NETWORK</div><h2>JOB BOARD</h2>
+      <ol id="jobs"></ol><button id="back">BACK</button>
+    </section>
+  </div>
+  <p class="sr-only" role="status" id="status"></p>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>

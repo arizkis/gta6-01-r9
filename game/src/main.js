@@ -1,134 +1,92 @@
-// Boot and the one loop: input is read every frame, the world advances in fixed 1/60 s steps
-// (several in a slow frame, none in a fast one), and the renderer paints what is there. The game
-// moves between four screens: title, play, paused and game over.
-//
-// ?seed=N fixes the falling pattern. ?shot=start|play|end (with &seed=N) stages that scene
-// instead of running the loop, paints it twice and sets window.__shotReady for a screenshot.
-import { BEST_KEY, LIVES, STEP } from './config.js';
-import { createRandom } from './random.js';
-import { createWorld, EVENT_HIT, EVENT_OVER } from './world.js';
-import { ACTION_CONFIRM, ACTION_PAUSE, createInput } from './input.js';
-import { createRenderer, SCREEN_OVER, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
-import { stageShot } from './shots.js';
+// High Water: seeded coastal city, weather and flood clock, traffic and people,
+// on-foot and vehicle handling, chase camera, minimap, HUD and six-job board.
+import { T } from './geometry.js';
+import { DEFAULT_SEED } from './config.js';
+import { buildCity } from './city.js';
+import { makeWeather } from './weather.js';
+import { makeSurge } from './surge.js';
+import { parkVehicles } from './vehicles.js';
+import { makeTraffic } from './traffic.js';
+import { makePedestrians } from './pedestrians.js';
+import { makePlayer, tickPlayer, interactable, useInteraction } from './player.js';
+import { makeCamera } from './camera.js';
+import { makeInput } from './input.js';
+import { makeHUD } from './hud.js';
+import { makeMinimap } from './minimap.js';
+import { makeMissionState, renderBoard } from './mission-director.js';
 
-/** The longest frame the loop catches up on; a longer stall (a hidden tab) is dropped, not replayed. */
-const MAX_FRAME = 0.25;
+const $=id=>document.getElementById(id), params=new URLSearchParams(location.search);
+const seed=params.has('seed') && Number.isSafeInteger(Number(params.get('seed'))) ? Number(params.get('seed')) : DEFAULT_SEED;
+const scene = new T.Scene();
+const renderer = new T.WebGLRenderer({ canvas:$('game'), antialias:false, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(1.25,window.devicePixelRatio)); renderer.toneMapping=T.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.11;
+const city=buildCity(scene,seed), weather=makeWeather(scene,city,seed+8), surge=makeSurge(scene,city.floodZones);
+const parked=parkVehicles(scene,city,seed+11), traffic=makeTraffic(scene,seed+19), crowd=makePedestrians(scene,city,seed+3);
+const actors=parked.concat(traffic.cars), player=makePlayer(scene), rig=makeCamera(), input=makeInput(), hud=makeHUD();
+const mission=makeMissionState(), wanted={level:0,evidence:{},dispatch:'',cone:null,search:null};
+const map=makeMinimap($('map'),city,crowd.contacts);
+const state={ scene, renderer, rig, city, player, parked, traffic, crowd, actors, weather, surge, mission, wanted,
+  seconds:0, mode:'title', police:[], cooler:null, radio:null, dialogue:null, interaction:null };
+export { state };
+let returnTo='title', notice=null, stamp=performance.now(), mapAt=-1;
 
-const params = new URLSearchParams(window.location.search);
-const shot = params.get('shot');
-const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
-const seed = Number.isInteger(seedParam) ? seedParam : Math.floor(Math.random() * 4294967296);
-
-const canvas = document.getElementById('game');
-const status = document.getElementById('status');
-const world = createWorld(createRandom(seed));
-const renderer = createRenderer(canvas);
-
-function readBest() {
-  try {
-    return Number.parseInt(window.localStorage.getItem(BEST_KEY) ?? '0', 10) || 0;
-  } catch {
-    return 0;
-  }
+const resize=()=> {
+  renderer.setSize(innerWidth,innerHeight,false); rig.camera.aspect=innerWidth/Math.max(1,innerHeight);
+  rig.camera.updateProjectionMatrix();
+};
+addEventListener('resize',resize); resize();
+function menu(next, focus=true) {
+  state.mode=next;
+  $('menus').hidden=next==='play';
+  for (const name of ['title','pause','board']) $(name).hidden=name!==next;
+  hud.visible(next==='play'); input.clearActions();
+  if (focus && next==='play' && document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  if (focus && next==='pause') $('resume').focus({preventScroll:true});
+  $('status').textContent=next==='play' ? 'Run active. '+city.districtAt(player.x,player.z) :
+    next==='pause' ? 'Run paused.' : next==='board' ? 'Job board open.' : '';
 }
-
-function saveBest(value) {
-  try {
-    window.localStorage.setItem(BEST_KEY, String(value));
-  } catch {
-    // Storage can be off (private windows): the best score then lasts this visit only.
-  }
-}
-
-function runShot(name) {
-  const scene = stageShot(name, world);
-  let painted = 0;
-  function paint() {
-    renderer.draw(world.state, scene.screen, scene.best);
-    painted += 1;
-    if (painted < 2) requestAnimationFrame(paint);
-    else window.__shotReady = true;
-  }
-  requestAnimationFrame(paint);
-}
-
-function runGame() {
-  const input = createInput(canvas);
-  let screen = SCREEN_TITLE;
-  let best = readBest();
-  let accumulator = 0;
-  let last = performance.now();
-
-  // Screen readers (and anyone watching the page's text) hear the screen changes and each hit.
-  function announce(message) {
-    status.textContent = message;
-  }
-
-  function startGame() {
-    world.reset();
-    accumulator = 0;
-    screen = SCREEN_PLAY;
-    announce(`Playing. ${LIVES} lives.`);
-  }
-
-  function endGame() {
-    screen = SCREEN_OVER;
-    if (world.state.score > best) {
-      best = world.state.score;
-      saveBest(best);
-    }
-    announce(`Game over. Score ${world.state.score}. Best ${best}.`);
-  }
-
-  function handleActions() {
-    const actions = input.takeActions();
-    if (actions & ACTION_CONFIRM && (screen === SCREEN_TITLE || screen === SCREEN_OVER)) startGame();
-    else if (actions & ACTION_PAUSE && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    } else if (actions & (ACTION_PAUSE | ACTION_CONFIRM) && screen === SCREEN_PAUSED) {
-      screen = SCREEN_PLAY;
-      announce('Playing.');
-    }
-  }
-
-  function step() {
-    if (screen === SCREEN_TITLE) {
-      world.step(STEP, 0, true);
-      return;
-    }
-    const events = world.step(STEP, input.direction(), false);
-    if (events & EVENT_OVER) endGame();
-    else if (events & EVENT_HIT) announce(world.state.lives === 1 ? 'Hit. 1 life left.' : `Hit. ${world.state.lives} lives left.`);
-  }
-
-  function frame(now) {
-    requestAnimationFrame(frame);
-    accumulator += Math.min((now - last) / 1000, MAX_FRAME);
-    last = now;
-    handleActions();
-    if (screen === SCREEN_TITLE || screen === SCREEN_PLAY) {
-      while (accumulator >= STEP && (screen === SCREEN_TITLE || screen === SCREEN_PLAY)) {
-        step();
-        accumulator -= STEP;
-      }
-    } else {
-      accumulator = 0;
-    }
-    renderer.draw(world.state, screen, best);
-  }
-
-  // Leaving the tab pauses a running game rather than letting blocks fall unseen.
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && screen === SCREEN_PLAY) {
-      screen = SCREEN_PAUSED;
-      announce('Paused.');
-    }
+function showBoard() {
+  returnTo=state.mode;
+  renderBoard($('jobs'),mission,job => {
+    mission.active=job; mission.stage='01 / PICKUP'; mission.next=job.next || job.summary;
+    menu('play');
   });
-
-  announce('Block Dodger. Press Space or click to start.');
-  requestAnimationFrame(frame);
+  menu('board'); $('jobs').querySelector('button:not(:disabled)')?.focus({preventScroll:true});
 }
+$('start').addEventListener('click',()=>menu('play'));
+$('resume').addEventListener('click',()=>menu('play'));
+$('restart').addEventListener('click',()=>location.reload());
+$('title-board').addEventListener('click',showBoard);
+$('pause-board').addEventListener('click',showBoard);
+$('back').addEventListener('click',()=>menu(returnTo));
 
-if (shot) runShot(shot);
-else runGame();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt=Math.min(.064,Math.max(.001,(now-stamp)/1000)); stamp=now;
+  if (input.take('pause')) {
+    if (state.mode==='play') menu('pause');
+    else if (state.mode==='pause') menu('play');
+    else if (state.mode==='board') menu(returnTo);
+  } else if (input.take('accept') && state.mode==='title') menu('play');
+  if (state.mode==='play') {
+    state.seconds+=dt; surge.tick(dt);
+    if (input.take('use')) {
+      const result=useInteraction(player,interactable(player,actors,crowd.contacts),city,actors);
+      if (result?.kind==='notice') notice={ ...result, until:state.seconds+1.8 };
+    }
+    tickPlayer(player,input,city,actors,dt);
+    traffic.tick(dt,player,weather.headlights);
+    crowd.tick(dt,weather,player);
+    state.interaction=notice?.until>state.seconds ? notice : interactable(player,actors,crowd.contacts);
+    hud.update(state);
+    if(state.seconds-mapAt>.08) { map(player,mission,wanted); mapAt=state.seconds; }
+  }
+  for (const car of parked) car.draw(!!weather.headlights && (car===player.vehicle || !car.parked));
+  for (const car of traffic.cars) if (car.parked || state.mode!=='play') car.draw(weather.headlights && (car===player.vehicle || !car.parked));
+  rig.follow(player,city,dt);
+  weather.tick(state.mode==='play' || state.mode==='title' ? dt : 0,rig.camera.position,player);
+  renderer.render(scene,rig.camera);
+}
+tickPlayer(player,input,city,actors,0); crowd.tick(0,weather,player);
+menu('title',false); requestAnimationFrame(frame);
