@@ -13,8 +13,9 @@ export function makeSurge(scene, zones) {
     if (!zone.ramp) scene.add(mesh);
     return { mesh, zone };
   });
+  const gates=[720,2040].map(z=>{const mesh=new T.Mesh(new T.BoxGeometry(91,6,3),new T.MeshLambertMaterial({color:'#c26d63',flatShading:true}));mesh.position.set(2745,7,z);scene.add(mesh);return mesh;});
   const state = {
-    duration: 720, remaining: 720, level: 0, causewayOpen: true, zones,
+    duration: 720, remaining: 720, level: 0, causewayOpen: true, zones, gates,
     depthAt(x, z) {
       let depth = 0;
       for (const area of this.zones) {
@@ -27,6 +28,7 @@ export function makeSurge(scene, zones) {
       this.remaining = clamp(seconds, 0, this.duration);
       this.level = 4 + Math.floor((this.duration - this.remaining) / 45) * 3;
       this.causewayOpen = this.remaining > 0;
+      gates.forEach(gate=>gate.visible=!this.causewayOpen);
       for (const { mesh, zone } of pools) {
         const depth = this.level + zone.bias;
         mesh.visible = depth > 0;

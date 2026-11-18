@@ -89,6 +89,7 @@ export function createVehicle(scene, type, x, z, heading = 0, options = {}) {
   return {
     id: options.id || type, model: type, name: model.name, condition: 100, speed: 0, throttle: 0, steering: 0,
     x, z, heading, radius: w * .5 + .5, length: l, mesh: group, body, tires, lamps, parked: options.parked ?? true,
+    tint, repaint(color){this.tint=color;const c=new T.Color(color);body.traverse(mesh=>{const a=mesh.geometry?.attributes?.color;if(mesh.isMesh&&a){for(let i=0;i<a.count;i++)a.setXYZ(i,c.r,c.g,c.b);a.needsUpdate=true;}});},
     draw(lights) {
       group.position.set(this.x, groundAt(this.x, this.z), this.z); group.rotation.y = this.heading;
       lamps.visible = lights;

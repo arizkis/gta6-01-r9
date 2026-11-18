@@ -38,7 +38,7 @@ export function makePedestrians(scene, city, seed) {
       const x = a.x+(b.x-a.x)*t, z = a.z+(b.z-a.z)*t;
       const near = city.shelters.reduce((prev,s) => distance({x,z},s)<distance({x,z},prev) ? s : prev, {x: -2000,z: -2000});
       const seeksShelter = i === 1 && (ix+iy)%3 === 1 && distance({x,z},near)<130;
-      people.push({ ...actor, umbrella, x, z, next: (index+1)%4, route, speed: r.range(2.3,4.2),
+      people.push({ ...actor, umbrella, x, z, radius:1.2, next: (index+1)%4, route, speed: r.range(2.3,4.2),
         takesUmbrella: (ix+iy+i)%3 !== 1, shelter: seeksShelter ? near : null, state: 'stroll', heading: 0, phase: r.range(0,7) });
     }
   }
@@ -55,12 +55,18 @@ export function makePedestrians(scene, city, seed) {
     marker.position.y = 9.4; mesh.add(marker);
     return { ...c, mesh };
   });
-  function tick(dt, weather, player) {
+  function tick(dt, weather, player, police=[], vehicles=[]) {
     for (const p of people) {
-      const rainy = weather.rain > .26, sheltering = rainy && !!p.shelter;
+      const rainy = weather.rain > .26;let sheltering=rainy&&!!p.shelter;
+      const threat=police.some(u=>u.active&&u.distance<115)||vehicles.some(v=>Math.abs(v.speed)>55&&distance(p,v)<95);
+      if(threat&&p.state!=='panic'){p.state='panic';p.panicFor=5;p.shelter=city.shelters.reduce((best,s)=>distance(p,s)<distance(p,best)?s:best,city.shelters[0]||p);}
+      if(p.state==='panic'&&!p.shelter)p.shelter=city.shelters[0]||{x:p.x,z:p.z};
+      if(!threat&&p.state==='panic'&&(p.panicFor-=dt)<=0){p.state='stroll';p.shelter=null;}
+      sheltering=rainy&&!!p.shelter;
       const alarm = p.state === 'panic';
-      let target = sheltering && !alarm ? p.shelter : p.route[p.next];
-      if (!sheltering && distance(p,target) < 1.6) { p.next = (p.next+1)%4; target = p.route[p.next]; }
+      let target = (sheltering||alarm) ? p.shelter : p.route[p.next];
+      if(!target){p.next=0;target=p.route[0]||{x:p.x,z:p.z};}
+      if (!sheltering && distance(p,target) < 1.6) { p.next = (p.next+1)%4; target = p.route[p.next]||{x:p.x,z:p.z}; }
       const dx = target.x-p.x, dz = target.z-p.z, len = Math.hypot(dx,dz);
       const speed = alarm ? p.speed * 2.3 : p.speed;
       let moving = false;

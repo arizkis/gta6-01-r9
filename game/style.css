@@ -28,9 +28,9 @@ html,body { margin:0; height:100%; overflow:hidden; }
 #stars { display:flex; gap:3px; }
 #stars span { color:#607083; font-size:20px; line-height:1; }
 #stars .lit { color:var(--amber); }
-.evidence { margin-top:8px; }
-#evidence { display:flex; gap:3px; }
-#evidence span { padding:2px 3px; border-radius:3px; background:#273344; color:#a9b7c4; font-size:14px; font-weight:800; }
+.evidence { display:block; margin-top:8px; }
+#evidence { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+#evidence span { padding:3px; border-radius:3px; background:#273344; color:#a9b7c4; font-size:14px; font-weight:800; line-height:1.1; text-align:center; white-space:pre-line; }
 #evidence .known { color:#ffb398; background:#5b3441; }
 #evidence .cleared { text-decoration:line-through; color:var(--aqua); }
 #dispatch { color:var(--amber); border-top:1px solid #536172; padding-top:6px; margin:6px 0 0; }
@@ -67,6 +67,14 @@ kbd { padding:2px 5px; border:1px solid #7a959b; border-radius:3px; color:var(--
 .dialogue p { margin:3px 0; }
 #portrait { width:48px; height:48px; flex:none; }
 .phone { max-height:48vh; overflow:auto; width:100%; pointer-events:auto; }
+.phone strong,.phone b { display:block; margin-top:5px; color:var(--aqua); }
+.phone p { margin:3px 0 6px; color:#e3d8c7; }
+.phone-button { position:absolute; right:0; bottom:-35px; pointer-events:auto; padding:5px 8px; font-size:14px; }
+.garage { position:absolute; right:0; bottom:40px; width:min(330px,80vw); display:grid; gap:5px; pointer-events:auto; }
+.garage p { margin:3px 0; color:var(--aqua); }
+.garage-stat { display:grid; grid-template-columns:85px 1fr; gap:6px; align-items:center; font-size:14px; color:#e6dcca; }
+.garage-stat i { display:block; height:6px; background:linear-gradient(90deg,var(--aqua) var(--value),#304255 var(--value)); border-radius:4px; }
+.garage button { font-size:14px; }
 .keys { position:absolute; bottom:0; width:100%; display:flex; flex-wrap:wrap; justify-content:center; gap:15px; padding:9px 12px; background:#101829eb; color:#d6dbdb; font-size:14px; }
 .keys span { white-space:nowrap; }
 .menus { display:grid; place-items:center; padding:20px; background:#0d192d91; }

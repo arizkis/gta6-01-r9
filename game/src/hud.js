@@ -33,7 +33,7 @@ export function makeHUD() {
       $('surge').parentNode.parentNode.classList.toggle('danger',left<120);
       $('stars').setAttribute('aria-label','Wanted level '+w.level+' of 5');
       stars.forEach((el,i)=>el.classList.toggle('lit',i<w.level));
-      for (const [name,el] of evidence) el.className=w.evidence[name] || '';
+      for (const [name,el] of evidence) { const status=w.evidence[name]||'cleared';el.className=status;el.setAttribute('aria-label',name.toUpperCase()+' '+status);text(el,name.toUpperCase()+'\n'+status.toUpperCase()); }
       $('dispatch').hidden=!w.dispatch; put('dispatch',w.dispatch || '');
       $('response').hidden=!police.length;
       units.forEach((el,i)=>{ const u=police[i]; el.hidden=!u; if(u) text(el,u.callsign+' / '+Math.round(u.distance)+' M / '+u.status); });
@@ -45,7 +45,7 @@ export function makeHUD() {
         put('condition',Math.round(p.vehicle.condition)+'% CONDITION'); $('radio').hidden=!radio; put('radio',radio || '');
       }
       $('cooler').hidden=!cooler?.active;
-      if (cooler?.active) { put('temperature',cooler.temp.toFixed(1)+'°C'); put('integrity',Math.round(cooler.integrity)+'%'); put('payout',money.format(cooler.payout)); }
+      if (cooler?.active) { put('temperature',cooler.mode==='carried'?'CARRIED · '+cooler.temp.toFixed(1)+'°C':cooler.temp.toFixed(1)+'°C'); put('integrity',Math.round(cooler.integrity)+'%'); put('payout',money.format(cooler.payout)); }
       vitals.forEach((set,i)=>set([p.health,p.armour,p.nerve][i]));
       respect.forEach(([name,set])=>set(p.respect[name]??0));
       $('prompt').hidden=!interaction; text($('prompt').lastElementChild,interaction?.text ?? '');

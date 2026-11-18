@@ -3,13 +3,14 @@ import { LOCATIONS } from './config.js';
 import { blocked, groundAt } from './city.js';
 import { SPEED } from './config.js';
 import { makePerson } from './pedestrians.js';
+import { part,box } from './geometry.js';
 import { drive } from './driving.js';
 import { distance, turnAngle } from './random.js';
 
 export function makePlayer(scene) {
-  const shape = makePerson('#ed9569', '#b97e5f'); scene.add(shape.mesh);
+  const shape = makePerson('#ed9569', '#b97e5f'), outfit=part(shape.mesh,2.2,1.3,.12,0,3.35,.53,'#d95275',box);outfit.visible=false;scene.add(shape.mesh);
   return {
-    ...shape, x: LOCATIONS.spawn.x, z: LOCATIONS.spawn.z, y: 0, heading: Math.PI / 2, vehicle: null,
+    ...shape, outfit, x: LOCATIONS.spawn.x, z: LOCATIONS.spawn.z, y: 0, heading: Math.PI / 2, vehicle: null,
     health: 100, armour: 0, nerve: 100, cash: 140, banked: 0,
     respect: { FIXER: 0, MECHANIC: 0, FENCE: 0 }, pace: 0, step: 0,
   };
@@ -45,14 +46,14 @@ export function useInteraction(player, action, city, cars) {
   }
   return action;
 }
-export function tickPlayer(p, keys, city, cars, dt) {
+export function tickPlayer(p, keys, city, cars, dt, surge=null, upgrades={}) {
   if (p.vehicle) {
-    drive(p.vehicle, keys, city, cars, dt);
+    drive(p.vehicle, keys, city, cars, dt, surge, upgrades.armour||0);
     p.x=p.vehicle.x; p.z=p.vehicle.z; p.heading=p.vehicle.heading;
   } else {
     const x = Number(keys.right)-Number(keys.left), z = Number(keys.back)-Number(keys.forward);
     const length = Math.hypot(x,z);
-    const stride = keys.sprint ? SPEED.sprint : SPEED.walk;
+    const stride = (keys.sprint ? SPEED.sprint : SPEED.walk)*(p.carrying ? .8 : 1);
     p.pace = 0;
     if (length) {
       const dx = x/length*stride*dt, dz = z/length*stride*dt;
