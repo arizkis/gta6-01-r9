@@ -103,6 +103,96 @@ button:disabled { color:#9ba9b9; background:#172233; cursor:default; outline:0; 
 .board li p { color:#c6d4df; margin:2px 0 0; font-size:14px; }
 .board li button { flex:none; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.shot #hud { font-size:16px; }
+.shot .top-left { top:5.8%;left:6%;width:320px; }
+.shot .top-right { top:5.8%;right:6%;width:302px; }
+.shot .bottom-left { bottom:6.2%;left:6%; }
+.shot .bottom-right { bottom:6.2%;right:6%; }
+.shot .bottom-center { bottom:6.3%;width:440px; }
+.shot .panel { border-color:#708594; background:rgba(10,19,31,.91); padding:12px 14px; }
+.shot .label,.shot .mission #objective,.shot .money,.shot .money b,.shot .money time,
+.shot #units li,.shot .vehicle small,.shot #condition,.shot #radio,.shot .garage-stat { font-size:16px; }
+.shot .mission h2 { font-size:22px; }
+.shot .mission #objective { line-height:1.36; }
+.shot .mission b { float:none;display:block;margin-top:4px; }
+.shot .evidence { margin-top:9px; }
+.shot #evidence { gap:5px; }
+.shot #evidence span { font-size:15px;padding:5px 3px; }
+.shot #stars span { font-size:25px; }
+.shot .money { gap:10px;flex-wrap:wrap; }
+.shot .money b,.shot .money time { font-variant-numeric:tabular-nums; }
+.shot .surge strong,.shot .cooler b,.shot .water strong { font-size:24px; }
+.shot-cover .surge { flex-wrap:nowrap;white-space:nowrap; }
+.shot-cover .surge strong { font-size:20px; }
+.shot #response ul { margin:5px 0 0; }
+.shot #units li { padding:3px 0;line-height:1.2; }
+.shot .map { width:202px; }
+.shot .map canvas { width:194px;height:194px; }
+.shot #map-district { font-size:15px; }
+.shot .vitals { width:220px;padding:10px 12px; }
+.shot .meter { grid-template-columns:82px 1fr 28px;font-size:16px; }
+.shot .meter i { height:7px; }
+.shot .readouts { gap:9px; }
+.shot .vehicle { min-width:168px; }
+.shot .vehicle div b { font-size:max(64px,6.25vw);line-height:.98; }
+.shot .dialogue { min-height:84px; }
+.shot #portrait { width:58px;height:58px; }
+.shot .dialogue p { font-size:18px;line-height:1.3; }
+.shot .phone { width:410px;max-height:38vh; }
+.shot .phone p { font-size:17px;line-height:1.32; }
+.shot-cover #mark,.shot-cover #bottom-left .vitals,.shot-cover #bottom-left #map-district,
+.shot-cover #prompt,.shot-cover #phone,.shot-cover .phone-button,.shot-cover .keys { display:none!important; }
+.shot-cover .alert-panel > .panel { padding:5px 0;border:0;border-top:1px solid #506272;border-radius:0;box-shadow:none; }
+.shot-cover .alert-panel #response > .label { display:block; }
+.shot-cover #dispatch,.shot-cover #clock { display:none!important; }
+.shot-cover .money > span { background:#263348;border-radius:4px;padding:4px 7px; }
+.shot-cover .bottom-center { left:45.5%;width:min(32vw,410px); }
+.shot-cover .bottom-right .readouts { position:relative; }
+.shot-cover #water { position:absolute; bottom:0; right:100%; margin-right:8px;white-space:nowrap; }
+.shot-cover #bottom-left .map { width:194px; }
+.shot-cover #bottom-left .map canvas { width:190px;height:190px; }
+.shot-market #top-right,.shot-market #bottom-right,.shot-market #bottom-left #respect,
+.shot-market .phone-button,.shot-market .keys,.shot-market .bottom-center .dialogue { display:none!important; }
+.shot-market .bottom-center { top:5.8%;right:6%;bottom:auto;left:auto;translate:none;width:410px;justify-items:end; }
+.shot-market .phone { max-height:35vh;width:min(36vw,410px); }
+.shot-market .map { width:156px; }
+.shot-market .map canvas { width:150px;height:150px; }
+.shot-market #map-district { font-size:14px; }
+.shot-cover #condition { display:none; }
+.shot-garage #top-right,.shot-garage #bottom-left,.shot-garage .keys,
+.shot-garage .phone-button,.shot-garage #phone { display:none!important; }
+.shot-garage .bottom-center { translate:none; }
+.shot-garage .garage { position:fixed;top:5.8%;right:6%;bottom:auto;width:320px;max-height:62vh;overflow:auto; }
+.shot-garage .garage h3 { margin:0;font-size:18px; }
+.shot-garage .garage-stat { grid-template-columns:126px 1fr;white-space:nowrap; }
+.shot-garage .garage button { font-size:15px;padding:7px 9px; }
+.shot-garage .garage button:nth-of-type(-n+3) { display:none; }
+.shot-garage #mission { width:290px; }
+.shot-garage .bottom-right { bottom:6.2%;right:6%; }
+.shot-garage #vehicle { min-width:0;padding:8px 11px; }
+.shot-garage #vehicle > :not(#radio) { display:none; }
+.shot-garage #cooler,.shot-garage #water { display:none!important; }
+.shot-garage .dialogue { position:fixed;left:50%;bottom:6.3%;translate:-50% 0;width:440px; }
+.shot-garage #dispatch { display:block!important;border:1px solid #536172;border-radius:6px;background:#173138;color:#9ae7d5;padding:6px 8px;margin:4px 0;font-weight:800;font-size:15px; }
+.shot-causeway #mark { display:block!important; }
+.shot-causeway #mark strong { font-size:26px;letter-spacing:-.035em; }
+.shot-causeway .top-left { width:390px; }
+.shot-causeway .mission h2 { font-size:24px; }
+.shot-causeway .mission #objective { font-size:16px;white-space:pre-line; }
+.shot-causeway .bottom-left .vitals,.shot-causeway #bottom-right #cooler,
+.shot-causeway #bottom-right #water,.shot-causeway #bottom-right #condition,
+.shot-causeway #bottom-right #radio,.shot-causeway .keys { display:none!important; }
+.shot-causeway #top-right { display:none; }
+.shot-causeway #vehicle { display:none!important; }
+@media(min-width:751px) and (max-width:1100px) {
+  .shot-cover .bottom-center { left:44.6%;width:30vw; }
+}
+@media(max-width:750px) {
+  .shot .top-left {left:3%;top:3%;width:245px;}
+  .shot .top-right {right:3%;top:3%;width:245px;}
+  .shot .bottom-left {left:3%;bottom:3%;}
+  .shot .bottom-right {right:3%;bottom:3%;}
+}
 @media (max-width:750px) {
   .top-left,.top-right { width:183px; top:10px; }
   .top-left,.bottom-left { left:10px; } .top-right,.bottom-right { right:10px; }

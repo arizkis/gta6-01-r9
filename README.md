@@ -8,7 +8,7 @@
 
 Juno Reed needs to move a load of cold cargo across Sunspur Bay before the monsoon surge closes the causeway. Drive through five neighborhoods or explore on foot. Rain sends people for cover while water rises on the boulevard and around the market and pier.
 
-This foundation has the seeded city, four weather presets, a live surge clock and depth gauge, playable driving and walking, traffic, pedestrians, contacts and the job board. In the gameplay pass, witnesses and patrols track plate, face and outfit evidence; the cooler's temperature and condition determine the payout; Tideworks provides repairs and upgrades; and the radio plays local stations. The job board currently lets you select the first job and see its pickup objective.
+Explore a seeded city with four weather presets, rising water, traffic and pedestrians. Witnesses and patrols track plate, face and outfit evidence. The cooler's temperature and integrity determine its payout; Tideworks offers repairs and upgrades. Complete jobs to unlock all six runs, bank earnings, and build respect with the contacts.
 
 | Job | Contact | What to do |
 | --- | --- | --- |
@@ -26,12 +26,13 @@ Run `node serve.ts` from the repository and open <http://localhost:8080> in desk
 | WASD / arrows | Walk or drive |
 | Shift | Sprint on foot or brake while coasting |
 | E | Use the nearby interaction; enter or leave a vehicle |
-| F | Radio (gameplay pass) |
-| X | Spike strip (gameplay pass) |
+| F | Change radio station |
+| X | Drop a purchased spike strip |
+| T | Open phone messages |
 | Esc / P | Pause or resume |
 | Enter | Start from the title screen |
 
-The capture pass will wire `/?shot=cover&seed=17`, `/?shot=market&seed=17`, `/?shot=garage&seed=17` and `/?shot=causeway&seed=17`. Serve locally and load each route directly. Once `window.__shotReady` is true, capture the browser viewport at 1280 pixels on the long side and use the corresponding filename from [shots.json](shots.json). Keep each image at or below 256 KiB.
+The four staged routes are `/?shot=cover&seed=17`, `/?shot=market&seed=17`, `/?shot=garage&seed=17` and `/?shot=causeway&seed=17`. Each sets the live systems, camera and scene, without changing the free-play save. Wait for `window.__shotReady`, then capture at 1280 × 960 using the corresponding filename from [shots.json](shots.json). Each JPEG must stay at or below 256 KiB.
 
 Package the local build with `MAKEFUN_OUTPUT_DIR=out node main.ts`. It writes `game/`, `screenshots/` and `dossier.json` into `out/`.
 

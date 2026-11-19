@@ -1,7 +1,77 @@
-import { T, box, cone, part } from './geometry.js';
+import { T, box, drum, part } from './geometry.js';
 import { createVehicle } from './vehicles.js';
 import { STREETS_X, STREETS_Z } from './config.js';
 import { lineOfSight } from './wanted.js';
+
+export function trackingLight(scene, color, intensity, reach) {
+  const material = new T.ShaderMaterial({
+    transparent:true, depthWrite:false, side:T.DoubleSide, blending:T.AdditiveBlending,
+    uniforms:{ tint:{value:new T.Color(color)} },
+    vertexShader:`
+      varying vec2 surface;
+      varying vec3 normalView, eye;
+      void main() {
+        surface=uv;
+        vec4 positionView=modelViewMatrix*vec4(position,1.);
+        eye=-positionView.xyz;
+        normalView=normalMatrix*normal;
+        gl_Position=projectionMatrix*positionView;
+      }`,
+    fragmentShader:`
+      uniform vec3 tint;
+      varying vec2 surface;
+      varying vec3 normalView, eye;
+      void main() {
+        float soft=smoothstep(.01,.48,abs(dot(normalize(eye),normalize(normalView))));
+        float falloff=smoothstep(0.,.12,surface.y)*(.56+.44*surface.y);
+        float rain=.86+.14*sin(surface.y*156.+sin(surface.x*74.)*3.);
+        gl_FragColor=vec4(tint,.30*soft*falloff*rain);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const volume = new T.Mesh(new T.CylinderGeometry(.008,1,1,32,1,true), material);
+  volume.frustumCulled=false;
+  const light = new T.SpotLight(color,intensity,reach,.29,.7,2);
+  const axis = new T.Vector3(0,1,0), direction = new T.Vector3();
+  scene.add(volume,light,light.target);
+  return {
+    aim(origin,target,radius) {
+      direction.subVectors(origin,target);
+      const length=direction.length();
+      volume.position.copy(origin).lerp(target,.5);
+      volume.quaternion.setFromUnitVectors(axis,direction.normalize());
+      volume.scale.set(radius,length,radius);
+      light.position.copy(origin); light.target.position.copy(target);
+    },
+    hide() { volume.visible=false; light.visible=false; },
+  };
+}
+
+function makeAirUnit(scene) {
+  const group=new T.Group(), rotor=new T.Group();
+  part(group,5.9,3.25,9.5,0,0,1,'#263749');
+  part(group,5.1,2.5,2,0,.48,5.2,'#77a8b1');
+  part(group,4.5,.95,2.45,0,-1,5.3,'#31495a');
+  part(group,1.8,1.65,10.5,0,.57,-7,'#40576a');
+  part(group,.46,3.65,2.8,0,1.43,-11.4,'#2e4355');
+  part(group,4.3,.24,1.18,0,.7,-10.3,'#596c77');
+  for(const side of [-1,1]) {
+    part(group,.3,.28,8.8,side*3.5,-2.8,1,'#9cb1b4');
+    for(const z of [-2.3,3]) part(group,.42,1.8,.38,side*3.12,-2,z,'#748793');
+    part(group,.35,.35,.54,side*3.02,-.35,2,side<0?'#fb5067':'#79f8cc',box,true);
+  }
+  part(group,1.55,.85,1.52,0,-1.82,2,'#ffe4b3',drum,true);
+  rotor.position.y=2.48;
+  part(rotor,27,.17,.66,0,0,0,'#a9b7ba');
+  part(rotor,.66,.17,27,0,0,0,'#83979f');
+  group.add(rotor); scene.add(group);
+  const spotlight=trackingLight(scene,'#ffe6b0',1150,155);
+  return {group,rotor,spotlight,aim(x,y,z) {
+    group.updateWorldMatrix(true,false);
+    const origin=group.localToWorld(new T.Vector3(0,-2.02,2));
+    spotlight.aim(origin,new T.Vector3(x,y,z),origin.y*.27);
+  }};
+}
 
 export function makePolice(scene, city, actors, collisionSet=actors) {
   const units=[];
@@ -33,14 +103,7 @@ export function makePolice(scene, city, actors, collisionSet=actors) {
     while(units.filter(u=>u.vehicle&&u.active).length<Math.min(4,wanted.level+2)&&wanted.level>0)
       spawn(player,units.filter(u=>u.vehicle&&u.active).length%2?'interceptor':'patrol');
     if(wanted.level>=4&&!air) {
-      const group=new T.Group();
-      part(group,5,2,11,0,0,0,'#374554',box);
-      const rotor=part(group,24,.28,.7,0,2,0,'#bbc2bd',box);
-      const beam=new T.Mesh(cone,new T.MeshBasicMaterial({color:'#ffe2a1',transparent:true,opacity:.16,depthWrite:false}));
-      beam.position.y=-20; beam.rotation.x=Math.PI; beam.scale.set(13,40,13); group.add(beam);
-      const light=new T.SpotLight('#ffd99d',3,200,Math.PI/5,.5,1); light.position.set(0,-1,0); group.add(light);
-      scene.add(group);
-      air={group,rotor,callsign:'AIR-1',status:'SPOTLIGHT',distance:0,active:true,x:player.x,z:player.z};
+      air={...makeAirUnit(scene),callsign:'AIR-1',status:'SPOTLIGHT',distance:0,active:true,x:player.x,z:player.z};
       units.push(air); wanted.setDispatch('AIR-1 SPOTLIGHT ON YOU',now);
     }
 
@@ -49,7 +112,8 @@ export function makePolice(scene, city, actors, collisionSet=actors) {
       if(!unit.active) continue;
       if(unit===air) {
         unit.x=player.x+35; unit.z=player.z-28; unit.distance=Math.hypot(unit.x-player.x,unit.z-player.z);
-        unit.group.position.set(unit.x,74,unit.z); unit.group.lookAt(player.x,0,player.z); unit.rotor.rotation.y+=dt*17;
+        unit.group.position.set(unit.x,74,unit.z); unit.group.lookAt(player.x,71,player.z);
+        unit.aim(player.x,1,player.z); unit.rotor.rotation.y+=dt*17;
         continue;
       }
       const car=unit.vehicle; unit.x=car.x; unit.z=car.z; unit.distance=Math.hypot(car.x-player.x,car.z-player.z);
@@ -104,7 +168,11 @@ export function makePolice(scene, city, actors, collisionSet=actors) {
     strip.rotation.y=car.heading; strip.visible=true; stripTime=8;
   }
   function clear() {
-    for(const unit of units) { unit.active=false; if(unit.vehicle) unit.vehicle.mesh.visible=false; else unit.group.visible=false; }
+    for(const unit of units) {
+      unit.active=false;
+      if(unit.vehicle) unit.vehicle.mesh.visible=false;
+      else { unit.group.visible=false; unit.spotlight.hide(); }
+    }
     air=null; strip.visible=false; stripTime=0;
   }
   return {units,update,dropSpikes,clear,disableNearest(player) {

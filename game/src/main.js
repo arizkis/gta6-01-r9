@@ -27,8 +27,10 @@ import { makeRadio } from './radio.js';
 import { makeGarage } from './garage-upgrades.js';
 import { makeEffects } from './effects.js';
 import { LOCATIONS } from './config.js';
+import { setupShot } from './shots.js';
 
 const $=id=>document.getElementById(id), params=new URLSearchParams(location.search);
+const shotName=params.get('shot'), staged=['cover','market','garage','causeway'].includes(shotName);
 const seed=params.has('seed') && Number.isSafeInteger(Number(params.get('seed'))) ? Number(params.get('seed')) : DEFAULT_SEED;
 const scene = new T.Scene();
 const renderer = new T.WebGLRenderer({ canvas:$('game'), antialias:false, powerPreference:'high-performance' });
@@ -38,7 +40,7 @@ const city=buildCity(scene,seed), weather=makeWeather(scene,city,seed+8), surge=
 const parked=parkVehicles(scene,city,seed+11), traffic=makeTraffic(scene,seed+19), crowd=makePedestrians(scene,city,seed+3);
 const actors=parked.concat(traffic.cars), collisions=actors.concat(crowd.people), player=makePlayer(scene), rig=makeCamera(), input=makeInput(), hud=makeHUD();
 const carriedCargo=new T.Mesh(new T.BoxGeometry(1.7,1.5,1.3),new T.MeshLambertMaterial({color:'#d7e4cf',flatShading:true}));carriedCargo.position.set(0,3.05,-.8);carriedCargo.visible=false;player.mesh.add(carriedCargo);
-const economy=makeEconomy(), mission=makeMissionState(), wanted=makeWanted(), cooler=makeCooler();
+const economy=makeEconomy(!staged), mission=makeMissionState(), wanted=makeWanted(), cooler=makeCooler();
 mission.unlocked=economy.data.unlocked;
 const dialogue=makeDialogue(),phone=makePhone(),radio=makeRadio(),garage=makeGarage(economy);
 const map=makeMinimap($('map'),city,crowd.contacts);
@@ -106,13 +108,13 @@ function worldUse(){
 
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt=Math.min(.064,Math.max(.001,(now-stamp)/1000)); stamp=now;
+  const dt=state.shot?1/30:Math.min(.064,Math.max(.001,(now-stamp)/1000)); stamp=now;
   if (input.take('pause')) {
     if (state.mode==='play') menu('pause');
     else if (state.mode==='pause') menu('play');
     else if (state.mode==='board') menu(returnTo);
   } else if (input.take('accept') && state.mode==='title') menu('play');
-  if (state.mode==='play') {
+  if (state.mode==='play' && !state.shot) {
     state.seconds+=dt; surge.tick(dt);
     phone.surge(surge.remaining);
     if(input.take('phone')){phone.toggle();$('phone').hidden=!phone.open;if(phone.open)phone.render($('phone'));}
@@ -152,14 +154,27 @@ function frame(now) {
     hud.update(state);
     if(state.seconds-mapAt>.08) { map(player,mission,wanted); mapAt=state.seconds; }
   }
+  if(state.shot){
+    state.seconds+=dt;
+    if(state.shot.name==='market')traffic.tick(dt,player,weather.headlights);
+    if(state.shot.name==='market')crowd.tick(dt,weather,player,[],actors);
+  }
   for (const car of parked) car.draw(!!weather.headlights && (car===player.vehicle || !car.parked));
-  for (const car of traffic.cars) if (car.parked || state.mode!=='play') car.draw(weather.headlights && (car===player.vehicle || !car.parked));
+  for (const car of traffic.cars) if (!state.shot && (car.parked || state.mode!=='play')) car.draw(weather.headlights && (car===player.vehicle || !car.parked));
   for (const unit of police.units) if(unit.vehicle&&unit.active)unit.vehicle.draw(weather.headlights);
   marker.visible=state.mode==='play'&&!!mission.destination;if(marker.visible){marker.position.set(mission.destination.x,.6,mission.destination.z);marker.rotation.z=state.seconds*.65;}
   rig.follow(player,city,dt);
+  state.shot?.frame(dt);
   weather.tick(state.mode==='play' || state.mode==='title' ? dt : 0,rig.camera.position,player);
-  effects.tick(dt,{vehicles:[player.vehicle,...traffic.cars,...police.units.filter(u=>u.vehicle).map(u=>u.vehicle)],surge,cooler,weather,renderer});
+  const fx={vehicles:[player.vehicle,...(state.shot?state.shot.traffic:traffic.cars),
+    ...police.units.filter(u=>u.vehicle).map(u=>u.vehicle)],surge,cooler,weather,renderer,camera:rig.camera};
+  if(state.shot?.name==='cover'&&!window.__shotReady)for(let i=0;i<17;i++)effects.tick(1/30,fx);
+  effects.tick(dt,fx);
   renderer.render(scene,rig.camera);
+  if(state.shot&&!window.__shotReady)window.__shotReady=true;
 }
 tickPlayer(player,input,city,actors,0); crowd.tick(0,weather,player);
-menu('title',false); requestAnimationFrame(frame);
+if(staged&&setupShot(shotName,state,{hud,map})){
+  state.mode='play';$('menus').hidden=true;hud.visible(true);input.clearActions();
+} else menu('title',false);
+requestAnimationFrame(frame);

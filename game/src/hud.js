@@ -23,7 +23,7 @@ export function makeHUD() {
     update({ player:p, city, surge:s, weather, wanted:w, mission:m, police=[], interaction, cooler, radio, dialogue, seconds }) {
       const district=city.districtAt(p.x,p.z), depth=Math.floor(s.depthAt(p.x,p.z));
       put('district',district); put('map-district',district);
-      put('job',m.active?.name ?? 'NO ACTIVE JOB'); put('stage',m.stage);
+      put('job',m.active?.name ?? m.resultName ?? 'NO ACTIVE JOB'); put('stage',m.stage);
       put('objective',m.next || 'Open the job board from the pause menu.');
       put('cash',money.format(p.cash)); put('banked',money.format(p.banked));
       const minute=(weather.hour*60+Math.floor(seconds/4))%1440;

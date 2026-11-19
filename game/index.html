@@ -11,41 +11,41 @@
 <body>
   <canvas id="game" aria-label="Live view of Sunspur Bay"></canvas>
   <main id="hud" hidden aria-label="Driving and mission display">
-    <div class="stack top-left">
-      <section class="panel mark"><span class="label">SUNSPUR BAY / STORMWATCH</span><strong>HIGH WATER</strong><span id="district"></span></section>
-      <section class="panel mission"><span class="label">CURRENT JOB <b id="stage"></b></span><h2 id="job">NO ACTIVE JOB</h2><span id="objective">Open the job board from the pause menu.</span></section>
+    <div class="stack top-left" id="top-left">
+      <section class="panel mark" id="mark"><span class="label">SUNSPUR BAY / STORMWATCH</span><strong>HIGH WATER</strong><span id="district"></span></section>
+      <section class="panel mission" id="mission"><span class="label">CURRENT JOB <b id="stage"></b></span><h2 id="job">NO ACTIVE JOB</h2><span id="objective">Open the job board from the pause menu.</span></section>
     </div>
-    <div class="stack top-right">
-      <section class="panel alert-panel">
+    <div class="stack top-right" id="top-right">
+      <section class="panel alert-panel" id="alert-panel">
         <div class="row"><span class="label">WANTED</span><div id="stars" aria-label="Wanted level"></div></div>
         <div class="row evidence"><span class="label">EVIDENCE</span><div id="evidence"></div></div>
         <p id="dispatch" hidden></p>
       </section>
-      <section class="panel money"><span>CASH <b id="cash"></b></span><span>BANKED <b id="banked"></b></span><time id="clock"></time></section>
+      <section class="panel money" id="money"><span>CASH <b id="cash"></b></span><span>BANKED <b id="banked"></b></span><time id="clock"></time></section>
       <section class="panel surge"><span>SURGE <strong id="surge"></strong></span><span id="bridge">CAUSEWAY CLOSES</span></section>
       <section class="panel" id="response" hidden><span class="label">POLICE RESPONSE</span><ul id="units"></ul></section>
     </div>
-    <div class="stack bottom-left">
+    <div class="stack bottom-left" id="bottom-left">
       <section class="panel vitals" aria-label="Condition and respect">
         <div id="vitals"></div><div id="respect"></div>
       </section>
       <div class="map"><canvas id="map" width="336" height="336" aria-label="Local street map"></canvas><span id="map-district"></span></div>
     </div>
-    <div class="stack bottom-right">
+    <div class="stack bottom-right" id="bottom-right">
       <section class="panel cooler" id="cooler" hidden><div><span class="label">COOLER</span><b id="temperature"></b></div><div><span class="label">INTEGRITY</span><b id="integrity"></b></div><div><span class="label">PAYOUT</span><b id="payout"></b></div></section>
       <div class="readouts">
         <section class="panel water" id="water"><div class="water-tube" aria-hidden="true"><i></i></div><div><span class="label">WATER</span><strong id="depth"></strong></div></section>
         <section class="panel vehicle" id="vehicle" hidden><span class="label" id="car-name"></span><div><b id="speed"></b> <small>KM/H</small></div><span id="condition"></span><span id="radio" hidden></span></section>
       </div>
     </div>
-    <div class="stack bottom-center">
+    <div class="stack bottom-center" id="bottom-center">
       <div class="panel prompt" id="prompt" hidden><kbd>E</kbd> <span></span></div>
       <div class="panel dialogue" id="dialogue" hidden><div id="portrait"></div><div><strong id="speaker"></strong><p id="line"></p></div></div>
       <div class="panel phone" id="phone" hidden></div>
       <button class="phone-button" id="phone-button" aria-label="Open phone messages">PHONE · T</button>
       <section class="panel garage" id="garage" hidden></section>
     </div>
-    <footer class="keys"><span><kbd>WASD</kbd> Move / drive</span><span><kbd>SHIFT</kbd> Sprint</span><span><kbd>E</kbd> Interact</span><span><kbd>F</kbd> Radio</span><span><kbd>X</kbd> Spike strip</span><span><kbd>T</kbd> Phone</span><span><kbd>ESC</kbd> Pause</span></footer>
+    <footer class="keys" id="keys"><span><kbd>WASD</kbd> Move / drive</span><span><kbd>SHIFT</kbd> Sprint</span><span><kbd>E</kbd> Interact</span><span><kbd>F</kbd> Radio</span><span><kbd>X</kbd> Spike strip</span><span><kbd>T</kbd> Phone</span><span><kbd>ESC</kbd> Pause</span></footer>
   </main>
   <div id="menus" class="menus">
     <section class="menu title" id="title">

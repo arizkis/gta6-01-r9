@@ -3,10 +3,10 @@ import { T } from './geometry.js';
 import { seeded } from './random.js';
 
 export const PRESETS = {
-  stormDusk: { top: '#16253f', rim: '#b16776', fog: '#776779', sun: '#ff9d62', skyLight: '#a9baec', ground: '#76666a', strength: 2.15, rain: 1, wind: 1, hour: 18, direction: [-.8,.12,-.45], mist: .00075 },
+  stormDusk: { top: '#242143', rim: '#b56f78', fog: '#776779', sun: '#ff9d62', skyLight: '#a9baec', ground: '#76666a', strength: 2.15, rain: 1, wind: 1, hour: 18, direction: [-.8,.12,-.45], mist: .00075 },
   wetMidday: { top: '#517485', rim: '#b9d2c9', fog: '#9caeb0', sun: '#fff0d4', skyLight: '#d2ebf4', ground: '#839d98', strength: 2.05, rain: .48, wind: .46, hour: 14, direction: [-.52,.62,-.3], mist: .00058 },
   neonNight: { top: '#080f26', rim: '#354274', fog: '#343850', sun: '#768ccc', skyLight: '#91a3ff', ground: '#644470', strength: .8, rain: .78, wind: .75, hour: 22, direction: [.45,.5,.3], mist: .00085 },
-  dawn: { top: '#54778e', rim: '#f5b6a0', fog: '#d7ada4', sun: '#ffd8aa', skyLight: '#d7e2f3', ground: '#b09e8e', strength: 2.55, rain: .05, wind: .20, hour: 6, direction: [.65,.19,.5], mist: .00049 },
+  dawn: { top: '#829eb5', rim: '#dfceca', fog: '#cbd1d1', sun: '#fff0d1', skyLight: '#d7e2f3', ground: '#a9b7bb', strength: 2.3, rain: .05, wind: .20, hour: 6, direction: [.65,.19,.5], mist: .00049 },
 };
 const skyShader = {
   vertexShader: `
@@ -85,9 +85,9 @@ export function makeWeather(scene, city, seed) {
       if (this.preset === 'stormDusk' && time >= nextBolt) {
         nextBolt = time + r.range(13, 24); flash = 1; thunderIn = r.range(.55, 1.9);
       }
-      flash *= Math.exp(-9 * dt); this.flash = flash;
-      key.intensity = PRESETS[this.preset].strength + flash * 2.2;
-      dome.position.copy(eye); skySurface.uniforms.flash.value = flash;
+      flash *= Math.exp(-9 * dt); this.flash = Math.max(flash,this.residualFlash||0);
+      key.intensity = PRESETS[this.preset].strength + this.flash * 2.2;
+      dome.position.copy(eye); skySurface.uniforms.flash.value = this.flash;
       skySurface.uniforms.windTime.value = time * .026;
       for (const { crown, phase } of city.palms) {
         crown.rotation.z = this.wind * (.12 + Math.sin(time * 2.1 + phase) * .12);
