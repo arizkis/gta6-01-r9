@@ -30,3 +30,9 @@ The kit CLI help was read before checking. Check the committed GitHub-repository
 - T4: `01a1f18f-d09d-7371-b505-38fa8b71b829`
 
 No submission, recording closure or comparison against live competitor sheets was performed in this pass.
+
+## Cover spotlight revision
+
+The cover now uses a shaped helicopter hull with cockpit glazing, colored trim and a tail rotor. The spotlight sweeps the open lane beside COLDFIN, where the beam and its reflection are visible together. The difference is visible when the old and new covers are scaled to 640 × 480.
+
+Playwright MCP captured the new cover directly at 1280 × 960 and JPEG quality 82 (225888 bytes). All four shot routes rendered and free play accepted keyboard movement. No browser errors or external requests were logged. Two package builds matched byte for byte. The dossier is 1140594 bytes and includes the full 161856-byte source text and outline.

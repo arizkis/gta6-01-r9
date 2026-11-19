@@ -6,7 +6,7 @@ import { lineOfSight } from './wanted.js';
 export function trackingLight(scene, color, intensity, reach) {
   const material = new T.ShaderMaterial({
     transparent:true, depthWrite:false, side:T.DoubleSide, blending:T.AdditiveBlending,
-    uniforms:{ tint:{value:new T.Color(color)} },
+    uniforms:{ tint:{value:new T.Color(color)}, strength:{value:.30} },
     vertexShader:`
       varying vec2 surface;
       varying vec3 normalView, eye;
@@ -19,13 +19,14 @@ export function trackingLight(scene, color, intensity, reach) {
       }`,
     fragmentShader:`
       uniform vec3 tint;
+      uniform float strength;
       varying vec2 surface;
       varying vec3 normalView, eye;
       void main() {
         float soft=smoothstep(.01,.48,abs(dot(normalize(eye),normalize(normalView))));
         float falloff=smoothstep(0.,.12,surface.y)*(.56+.44*surface.y);
         float rain=.86+.14*sin(surface.y*156.+sin(surface.x*74.)*3.);
-        gl_FragColor=vec4(tint,.30*soft*falloff*rain);
+        gl_FragColor=vec4(tint,strength*soft*falloff*rain);
         #include <colorspace_fragment>
       }`,
   });
@@ -35,41 +36,83 @@ export function trackingLight(scene, color, intensity, reach) {
   const axis = new T.Vector3(0,1,0), direction = new T.Vector3();
   scene.add(volume,light,light.target);
   return {
-    aim(origin,target,radius) {
+    aim(origin,target,radius,strength=.30) {
       direction.subVectors(origin,target);
       const length=direction.length();
       volume.position.copy(origin).lerp(target,.5);
       volume.quaternion.setFromUnitVectors(axis,direction.normalize());
       volume.scale.set(radius,length,radius);
+      material.uniforms.strength.value=strength;
       light.position.copy(origin); light.target.position.copy(target);
     },
     hide() { volume.visible=false; light.visible=false; },
   };
 }
 
-function makeAirUnit(scene) {
-  const group=new T.Group(), rotor=new T.Group();
-  part(group,5.9,3.25,9.5,0,0,1,'#263749');
-  part(group,5.1,2.5,2,0,.48,5.2,'#77a8b1');
-  part(group,4.5,.95,2.45,0,-1,5.3,'#31495a');
-  part(group,1.8,1.65,10.5,0,.57,-7,'#40576a');
-  part(group,.46,3.65,2.8,0,1.43,-11.4,'#2e4355');
-  part(group,4.3,.24,1.18,0,.7,-10.3,'#596c77');
-  for(const side of [-1,1]) {
-    part(group,.3,.28,8.8,side*3.5,-2.8,1,'#9cb1b4');
-    for(const z of [-2.3,3]) part(group,.42,1.8,.38,side*3.12,-2,z,'#748793');
-    part(group,.35,.35,.54,side*3.02,-.35,2,side<0?'#fb5067':'#79f8cc',box,true);
+function airframe(group) {
+  // Cross sections from the tail to the nose, with a separate cockpit and belly.
+  const profile=[[-12.8,.68,0,0],[-11.8,.65,.36,.49],[-5.2,.46,.76,.66],
+    [-3.1,.1,2.55,1.63],[2.6,.1,3.16,2.03],[5.45,-.18,2.43,1.36],
+    [6.42,-.62,1.17,.63],[6.63,-.66,0,0]];
+  const geometry=new T.BufferGeometry(), vertices=[];
+  const panels=[[],[],[],[]];
+  for(const [z,y,width,height] of profile)for(let i=0;i<8;i++){
+    const angle=(i+.5)*Math.PI/4;
+    vertices.push(Math.cos(angle)*width,y+Math.sin(angle)*height,z);
   }
-  part(group,1.55,.85,1.52,0,-1.82,2,'#ffe4b3',drum,true);
-  rotor.position.y=2.48;
-  part(rotor,27,.17,.66,0,0,0,'#a9b7ba');
-  part(rotor,.66,.17,27,0,0,0,'#83979f');
+  for(let ring=0;ring<profile.length-1;ring++)for(let side=0;side<8;side++){
+    const a=ring*8+side,b=ring*8+(side+1)%8;
+    const belly=side>=4&&side<=6, windshield=(ring===4||ring===5)&&!belly;
+    const trim=side===3||side===7;
+    const surface=belly?2:windshield?3:trim?1:0;
+    panels[surface].push(a,b,a+8,b,b+8,a+8);
+  }
+  const indices=[];
+  panels.forEach((panel,surface)=>{
+    geometry.addGroup(indices.length,panel.length,surface);
+    indices.push(...panel);
+  });
+  geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const materials=['#9fbecb','#498fa4','#344d68','#37647b'].map(color=>
+    new T.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.36,roughness:.63,flatShading:true}));
+  group.add(new T.Mesh(geometry,materials));
+}
+
+function makeAirUnit(scene) {
+  const group=new T.Group(), rotor=new T.Group(), tailRotor=new T.Group();
+  airframe(group);
+  part(group,.48,3.65,2.8,0,1.43,-11.4,'#5e7a91').rotation.x=.31;
+  part(group,5.5,.24,1.42,0,.72,-9.1,'#87a7b5');
+  tailRotor.position.set(.41,1.77,-11.5);
+  part(tailRotor,.14,4.1,.26,0,0,0,'#b2cad3');
+  part(tailRotor,.14,.26,4.1,0,0,0,'#89a9b6');
+  group.add(tailRotor);
+  for(const side of [-1,1]) {
+    part(group,.3,.3,8.8,side*3.27,-2.75,1,'#adcad3');
+    part(group,.3,.3,1.85,side*3.27,-2.37,5.99,'#adcad3').rotation.x=-.54;
+    for(const z of [-2.3,3]) part(group,.28,1.8,.31,side*2.95,-1.97,z,'#8aa3b3').rotation.z=side*.28;
+    part(group,.16,.16,4.45,side*2.76,-.38,.3,'#b3e3ea',box,true).rotation.y=side*.07;
+    part(group,.34,.28,.48,side*3.01,-.2,2,side<0?'#fb5067':'#79f8cc',box,true);
+  }
+  part(group,1.65,.7,1.65,0,-1.9,2,'#385269',drum);
+  part(group,1.45,.2,1.45,0,-2.25,2,'#fff0ca',drum,true);
+  part(group,.46,1.17,.46,0,2.13,.26,'#7898ab',drum);
+  rotor.position.set(0,2.72,.26);
+  for(let i=0;i<4;i++){
+    const blade=new T.Group(); blade.rotation.y=i*Math.PI/2;
+    part(blade,.68,.14,12.9,0,0,6.9,'#627b8b');
+    part(blade,.69,.15,1.34,0,0,12.84,'#c6dbe1');
+    rotor.add(blade);
+  }
   group.add(rotor); scene.add(group);
   const spotlight=trackingLight(scene,'#ffe6b0',1150,155);
-  return {group,rotor,spotlight,aim(x,y,z) {
+  return {group,rotor,spotlight,aim(x,y,z,strength) {
     group.updateWorldMatrix(true,false);
-    const origin=group.localToWorld(new T.Vector3(0,-2.02,2));
-    spotlight.aim(origin,new T.Vector3(x,y,z),origin.y*.27);
+    tailRotor.rotation.x=rotor.rotation.y*2.8;
+    const origin=group.localToWorld(new T.Vector3(0,-2.35,2));
+    spotlight.aim(origin,new T.Vector3(x,y,z),origin.y*.27,strength);
   }};
 }
 

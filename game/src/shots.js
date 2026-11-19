@@ -5,7 +5,7 @@ import { JOBS, startJob, tickMission } from './mission-director.js';
 import { LOCATIONS } from './config.js';
 import { drawPortrait } from './portraits.js';
 import { trackingLight } from './police-tactics.js';
-import { fitPoliceGlare, marketSet, strandSet, stormBolt, wetSurface } from './shot-set.js';
+import { fitPoliceGlare, marketSet, spotlightPool, strandSet, stormBolt, wetSurface } from './shot-set.js';
 
 const $=id=>document.getElementById(id);
 const tone=(color,opacity)=>new T.MeshBasicMaterial({color,transparent:true,opacity,depthWrite:false,side:T.DoubleSide});
@@ -219,6 +219,7 @@ export function setupShot(name,state,{hud,map}) {
     lightsAndDialog(state,'Tavi Moss','That water won’t wait. Put it down.');
     strandSet(state);
     shot.bolt=stormBolt(state.scene);
+    shot.airPool=spotlightPool(state.scene);
     shot.pursuitLight=trackingLight(state.scene,'#a8d9ff',16,42);
     shot.water=wetSurface(state.scene,1324,.705,2040,205,43,[
       [1291,2031,3,38,'#ef466f'],[1293,2033,3,32,'#536eff'],
@@ -335,10 +336,12 @@ export function setupShot(name,state,{hud,map}) {
       const air=units.find(unit=>!unit.vehicle);
       if(air){
         air.x=x+21; air.z=z+6; air.distance=22;
-        air.group.position.set(air.x,19,air.z); air.group.lookAt(x,16,z+12);
-        air.group.rotateZ(-.18); air.rotor.rotation.y+=dt*16;
-        // End the air unit's real light on the flood beneath COLDFIN.
-        air.aim(x+1,.72,z+Math.sin(t*2)*1.2);
+        air.group.position.set(air.x,18.4,air.z); air.group.lookAt(x,16,z+9);
+        air.group.rotateZ(-.23); air.rotor.rotation.y+=dt*16;
+        // Sweep the flooded lane just off the van's left flank.
+        const poolX=x+2.5, poolZ=z-10+Math.sin(t*1.4)*1.4;
+        air.aim(poolX,.73,poolZ,.46);
+        shot.airPool(poolX,.74,poolZ,t);
       }
       shot.pursuitLight.aim(new T.Vector3(x-8,4.85,z+9),new T.Vector3(x,2,z+1),3.5);
       shot.water.time.value=t;

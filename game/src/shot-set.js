@@ -53,6 +53,29 @@ export function wetSurface(scene, x, y, z, width, depth, sources, wind = .55) {
   return material.uniforms;
 }
 
+export function spotlightPool(scene) {
+  const material=new T.ShaderMaterial({
+    transparent:true, depthWrite:false, blending:T.AdditiveBlending,
+    uniforms:{time:{value:0}},
+    vertexShader:`
+      varying vec2 surface;
+      void main(){surface=uv*2.-1.;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`
+      varying vec2 surface;
+      uniform float time;
+      void main(){
+        float radius=length(surface);
+        float rings=.79+.21*sin(surface.y*51.+sin(surface.x*21.)+time*7.);
+        float light=(1.-smoothstep(.16,1.,radius))*rings;
+        gl_FragColor=vec4(.98,.79,.49,light*.37);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const patch=new T.Mesh(new T.PlaneGeometry(12,18),material);
+  patch.rotation.set(-Math.PI/2,0,-.91); patch.renderOrder=3; scene.add(patch);
+  return (x,y,z,time)=>{patch.position.set(x,y,z);material.uniforms.time.value=time;};
+}
+
 export function strandSet(state) {
   const {scene,city}=state, batch=makeBatch(scene), add=batch.add, rnd=seeded(17);
   const faces=['#374660','#66536b','#53617b','#395464','#55425d','#526c73'];
